@@ -20,6 +20,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -29,11 +30,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
     'getpaid_przelewy24',
-    
-    'getpaid_przelewy24.test_utils.test_app'
-    
 
     # if your app has other dependencies that need to be added to the site
     # they should be added here
