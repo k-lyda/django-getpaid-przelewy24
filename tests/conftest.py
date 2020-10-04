@@ -16,7 +16,7 @@ from getpaid_przelewy24.client import Client
 def getpaid_client(requests_mock):
     yield Client(
         api_url="https://example.com/",
-        pos_id=123251,
-        secret_id="b6ca15b0d1020e8094d9b5f8d163db54",
-        crc=300746,
+        pos_id=123456,
+        secret_id="09f49762ac3463f3698a6b463a1ac2a7",
+        crc="3f76241ef53498a1test"
     )

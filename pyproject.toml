@@ -41,7 +41,7 @@ authors = ["Konrad Lyda <konrad.lyda@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
-django-getpaid = "^2.1.0"
+django-getpaid = "^2.2.0"
 requests = "^2.23.0"
 swapper = "^1.1.2"
 typing-extensions = "^3.7.4"

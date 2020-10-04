@@ -1,5 +1,4 @@
 from enum import Enum, auto, IntFlag
-from enum import Enum, auto, IntFlag
 from typing import Any, Optional, Union, NamedTuple
 
 from typing_extensions import TypedDict
@@ -98,3 +97,45 @@ class OrderStatus(AutoName):
     CANCELED = auto()
     COMPLETED = auto()
     WAITING_FOR_CONFIRMATION = auto()
+
+
+class OrderStatusObj(TypedDict):
+    statusCode: ResponseStatus
+    statusDesc: Optional[str]
+
+
+class PaymentResponse(TypedDict):
+    status: OrderStatusObj
+    redirectUri: str
+
+
+class ChargeResponse(TypedDict):
+    status: OrderStatusObj
+
+
+class TransactionStatus(IntFlag):
+    NO_PAYMENT = 0
+    ADVANCE_PAYMENT = 1
+    PAYMENT_MADE = 2
+    PAYMENT_RETURNED = 3
+
+
+class TransactionInfoResponse(TypedDict):
+    statement: str
+    orderId: int
+    sessionId: str
+    status: TransactionStatus
+    amount: int
+    currency: str
+    date: str
+    dateOfTransaction: str
+    clientEmail: str
+    accountMD5: str
+    paymentMethod: int
+    description: str
+    clientName: str
+    clientAddress: str
+    clientCity: str
+    clientPostcode: str
+    batchId: int
+    fee: str

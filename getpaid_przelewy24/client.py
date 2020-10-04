@@ -8,14 +8,20 @@ from urllib.parse import urljoin
 import requests
 from django.core.serializers.json import DjangoJSONEncoder
 from getpaid.exceptions import (
-    LockFailure,
+    ChargeFailure
+)
+from getpaid.exceptions import (
+    LockFailure, CommunicationError,
 )
 from getpaid.types import ItemInfo
+from requests.auth import _basic_auth_str
 
 from .types import (
     BuyerData,
     Currency,
     PaymentChannel,
+    ChargeResponse, TransactionInfoResponse,
+
 )
 
 
@@ -36,7 +42,11 @@ class Client:
         self.crc = crc
 
     def _headers(self, **kwargs):
-        data = {"Content-Type": "application/json"}
+        auth_string = _basic_auth_str(self.pos_id, self.secret_id)
+        data = {
+            "Content-Type": "application/json",
+            "Authorization": auth_string
+        }
         data.update(kwargs)
         return data
 
@@ -82,14 +92,7 @@ class Client:
             return [cls._normalize_convertibles(v) for v in data]
         return data
 
-    def _get_sign(self, session_id: str, amount: int, currency: Currency):
-        params = {
-            "sessionId": session_id,
-            "merchantId": self.pos_id,
-            "amount": self._centify(amount),
-            "currency": currency.value,
-            "crc": self.crc
-        }
+    def _get_sign(self, params):
         return sha384(json.dumps(params, separators=(',', ':')).encode('utf-8')).hexdigest()
 
     def register_transaction(
@@ -98,8 +101,8 @@ class Client:
             amount: Union[Decimal, float],
             currency: Currency,
             buyer: BuyerData,
+            url_return: str,
             description: Optional[str] = None,
-            url_return: Optional[str] = None,
             url_status: Optional[str] = None,
             time_limit: Optional[int] = None,
             channel: Optional[PaymentChannel] = None,
@@ -113,8 +116,8 @@ class Client:
             :param amount: Payment amount
             :param currency: currency code
             :param description: Short description of the whole order
-            :param buyer: Buyer data (see :class:`Buyer`)
             :param url_return: URL address to which customer will be redirected when transaction is complete
+            :param buyer: Buyer data (see :class:`Buyer`)
             :param url_status: URL address to which transaction status will be send
             :param time_limit: Time limit for transaction process, 0 - no limit, max. 99 (in minutes)
             :param channel: Channel Enum (see :class:`PaymentChannel`)
@@ -124,23 +127,28 @@ class Client:
         """
         url = urljoin(self.api_url, "/api/v1/transaction/register")
         data = self._centify_convertibles({
-                  "merchantId": self.pos_id,
-                  "posId": self.pos_id,
-                  "sessionId": session_id,
-                  "amount": amount,
-                  "currency": currency,
-                  "description": description if description else "Payment order",
-                  "email": buyer.email,
-                  "client": buyer,
-                  "country": "PL",
-                  "language": buyer.language if buyer.language else "pl",
-                  "timeLimit": time_limit if time_limit else 0,
-                  "waitForResult": wait_for_result,
-                  "transferLabel": description if description else "Payment order",
-                  "sign": self._get_sign(session_id, amount, currency),
+            "merchantId": self.pos_id,
+            "posId": self.pos_id,
+            "sessionId": session_id,
+            "amount": amount,
+            "currency": currency,
+            "description": description if description else "Payment order",
+            "email": buyer.email,
+            "client": str(buyer),
+            "country": "PL",
+            "language": buyer.language if buyer.language else "pl",
+            "urlReturn": url_return,
+            "timeLimit": time_limit if time_limit else 0,
+            "waitForResult": wait_for_result,
+            "transferLabel": description if description else "Payment order",
+            "sign": self._get_sign({
+                "sessionId": session_id,
+                "merchantId": self.pos_id,
+                "amount": self._centify(amount),
+                "currency": currency.value,
+                "crc": self.crc
+            }),
         })
-        if url_return:
-            data["urlReturn"] = url_return
         if url_status:
             data["urlStatus"] = url_status
         if channel:
@@ -156,3 +164,38 @@ class Client:
         raise LockFailure(
             "Error creating order", context={"raw_response": self.last_response}
         )
+
+    def verify_transaction(self, session_id: str, amount: Union[Decimal, float], currency: Currency, order_id: int, **kwargs) -> ChargeResponse:
+        url = urljoin(self.api_url, "/api/v1/transaction/verify")
+        data = self._centify_convertibles({
+          "merchantId": self.pos_id,
+          "posId": self.pos_id,
+          "sessionId": session_id,
+          "amount": amount,
+          "currency": currency.value,
+          "orderId": order_id,
+          "sign": self._get_sign({
+                "sessionId": session_id,
+                "orderId": order_id,
+                "amount": self._centify(amount),
+                "currency": currency.value,
+                "crc": self.crc
+            }),
+        })
+        headers = self._headers(**kwargs)
+        data.update(kwargs)
+        encoded = json.dumps(data, cls=DjangoJSONEncoder)
+        self.last_response = requests.put(url, data=encoded, headers=headers)
+        if self.last_response.status_code == 200:
+            return self._normalize_convertibles(self.last_response.json())
+        raise ChargeFailure(
+            "Error verifying transaction",
+            context={"raw_response": self.last_response},
+        )
+
+    def get_transaction_info(self, session_id: str, **kwargs) -> TransactionInfoResponse:
+        url = urljoin(self.api_url, f"/api/v1/transaction/by/sessionId/{session_id}")
+        self.last_response = requests.get(url, headers=self._headers(**kwargs))
+        if self.last_response.status_code == 200:
+            return self._normalize_convertibles(self.last_response.json())
+        raise CommunicationError(context={"raw_response": self.last_response})
