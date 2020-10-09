@@ -20,6 +20,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+GETPAID_ORDER_MODEL = "orders.Order"
+GETPAID_PAYMENT_MODEL = "paywall.Payment"
 
 # Application definition
 
@@ -30,7 +32,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'getpaid',
     'getpaid_przelewy24',
+    'orders',
+    'paywall'
 
     # if your app has other dependencies that need to be added to the site
     # they should be added here
@@ -46,7 +51,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'tests.urls'
+ROOT_URLCONF = "example.urls"
 
 TEMPLATES = [
     {
@@ -63,8 +68,6 @@ TEMPLATES = [
         },
     },
 ]
-
-WSGI_APPLICATION = 'example.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases

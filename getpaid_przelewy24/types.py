@@ -23,7 +23,6 @@ class SpecData(TypedDict):
 
 
 class Currency(AutoName):
-    EUR = auto()
     PLN = auto()
 
 
@@ -74,7 +73,6 @@ class BuyerData(NamedTuple):
     phone: Optional[str] = None
     firstName: Optional[str] = None
     lastName: Optional[str] = None
-    nin: Optional[str] = None
     language: Optional[Language] = None
 
     def __str__(self):

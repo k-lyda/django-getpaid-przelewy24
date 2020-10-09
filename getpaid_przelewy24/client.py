@@ -92,8 +92,12 @@ class Client:
             return [cls._normalize_convertibles(v) for v in data]
         return data
 
-    def _get_sign(self, params):
+    def get_sign(self, params):
+        params["crc"] = self.crc
         return sha384(json.dumps(params, separators=(',', ':')).encode('utf-8')).hexdigest()
+
+    def get_transaction_url(self, token):
+        return urljoin(self.api_url, f"/trnRequest/{token}")
 
     def register_transaction(
             self,
@@ -141,12 +145,11 @@ class Client:
             "timeLimit": time_limit if time_limit else 0,
             "waitForResult": wait_for_result,
             "transferLabel": description if description else "Payment order",
-            "sign": self._get_sign({
+            "sign": self.get_sign({
                 "sessionId": session_id,
                 "merchantId": self.pos_id,
                 "amount": self._centify(amount),
                 "currency": currency.value,
-                "crc": self.crc
             }),
         })
         if url_status:
@@ -174,12 +177,11 @@ class Client:
           "amount": amount,
           "currency": currency.value,
           "orderId": order_id,
-          "sign": self._get_sign({
+          "sign": self.get_sign({
                 "sessionId": session_id,
                 "orderId": order_id,
                 "amount": self._centify(amount),
                 "currency": currency.value,
-                "crc": self.crc
             }),
         })
         headers = self._headers(**kwargs)

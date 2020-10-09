@@ -74,7 +74,7 @@ def test_centify(before, after, getpaid_client):
     ],
 )
 def test_sign_calculation(params, sign, getpaid_client):
-    result = getpaid_client._get_sign(params)
+    result = getpaid_client.get_sign(params)
     assert result == sign
 
 
@@ -97,6 +97,7 @@ def test_register_transaction(getpaid_client, requests_mock):
         amount=1.23,
         currency=Currency.PLN,
         buyer=buyer,
+        url_return="https://example.com"
     )
     assert "data" in result
     assert "responseCode" in result
@@ -116,6 +117,7 @@ def test_register_transaction_failure(response_status, getpaid_client, requests_
             amount=1.23,
             currency=Currency.PLN,
             buyer=buyer,
+            url_return="https://example.com"
         )
 
 
