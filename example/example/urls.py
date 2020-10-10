@@ -9,5 +9,6 @@ urlpatterns = [
     re_path(r"^$", HomeView.as_view(), name="home"),
     path("order/<int:pk>/", OrderView.as_view(), name="order_detail"),
     path("payments/", include("getpaid.urls")),
+    path("payments/", include("getpaid_przelewy24.urls")),
     path("paywall/", include("paywall.urls")),
 ]

@@ -51,7 +51,7 @@ class PaymentProcessor(BaseProcessor):
         """
         our_baseurl = self.get_our_baseurl(request)
         url_return = urljoin(
-            our_baseurl, reverse("getpaid:callback", kwargs={"pk": self.payment.pk})
+            our_baseurl, reverse("getpaid_przelewy24:payment-verification", kwargs={"pk": self.payment.pk})
         )
         context = {
             "session_id": self.payment.get_unique_id(),

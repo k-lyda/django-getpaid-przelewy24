@@ -47,7 +47,6 @@ def test_rest_flow_begin(
     settings.DEBUG = True
 
     payment = payment_factory()
-    # requests_mock.post(str(url_api_register), json={"url": str(url_post_payment)})
     result = payment.prepare_transaction(None)
 
     assert result.status_code == 302
