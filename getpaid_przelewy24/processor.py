@@ -63,7 +63,7 @@ class PaymentProcessor(BaseProcessor):
             "description": self.payment.description,
             "time_limit": self.payment.time_limit,
             "channel": self.payment.channel,
-            "wait_for_result": self.payment.wait_for_result,
+            "wait_for_result": self.client.wait_for_result,
         }
         if self.get_setting("confirmation_method", self.confirmation_method) == "PUSH":
             context["url_status"] = urljoin(

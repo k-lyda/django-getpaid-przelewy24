@@ -2,9 +2,7 @@ import uuid
 
 import requests
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
 from django_fsm import FSMField, transition
-from getpaid.models import AbstractPayment
 from getpaid.status import FraudStatus as fs
 from getpaid.status import PaymentStatus as ps
 
@@ -53,11 +51,3 @@ class PaymentEntry(models.Model):
     @transition(field=payment_status, source=ps.REFUND_STARTED, target=ps.PAID)
     def cancel_refund(self):
         pass
-
-
-class Payment(AbstractPayment):
-    url_return = models.CharField(_("url_return"), max_length=256, db_index=True)
-    time_limit = models.IntegerField(_("time limit"), default=0)
-    channel = models.IntegerField(_("payment channel"))
-    wait_for_result = models.BooleanField(_("wait for result"), default=True)
-    token = models.CharField(_("token"), max_length=50, null=True)

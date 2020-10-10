@@ -21,7 +21,7 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 GETPAID_ORDER_MODEL = "orders.Order"
-GETPAID_PAYMENT_MODEL = "paywall.Payment"
+GETPAID_PAYMENT_MODEL = "getpaid_przelewy24.Payment"
 
 # Application definition
 

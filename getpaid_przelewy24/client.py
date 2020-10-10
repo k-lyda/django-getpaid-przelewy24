@@ -35,11 +35,13 @@ class Client:
         pos_id: int,
         secret_id: str,
         crc: str,
+        wait_for_result: bool = True
     ):
         self.api_url = api_url
         self.pos_id = pos_id
         self.secret_id = secret_id
         self.crc = crc
+        self.wait_for_result = wait_for_result
 
     def _headers(self, **kwargs):
         auth_string = _basic_auth_str(self.pos_id, self.secret_id)
@@ -143,7 +145,7 @@ class Client:
             "language": buyer.language if buyer.language else "pl",
             "urlReturn": url_return,
             "timeLimit": time_limit if time_limit else 0,
-            "waitForResult": wait_for_result,
+            "waitForResult": self.wait_for_result,
             "transferLabel": description if description else "Payment order",
             "sign": self.get_sign({
                 "sessionId": session_id,

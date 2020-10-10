@@ -22,10 +22,8 @@ class PaymentFactory(factory.django.DjangoModelFactory):
     currency = factory.SelfAttribute("order.currency")
     description = factory.SelfAttribute("order.name")
     backend = "getpaid_przelewy24"
-    url_return = "https://example.com/return"
     time_limit = 15
     channel = 1
-    wait_for_result = True
     token = None
 
     class Meta:

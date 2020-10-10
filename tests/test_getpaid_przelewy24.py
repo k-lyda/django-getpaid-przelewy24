@@ -45,12 +45,14 @@ def test_rest_flow_begin(
     )
 
     settings.GETPAID_BACKEND_SETTINGS = _prep_conf(api_method=bm.REST)
+    settings.DEBUG = True
 
     payment = payment_factory(external_id=uuid.uuid4())
     # requests_mock.post(str(url_api_register), json={"url": str(url_post_payment)})
     result = payment.prepare_transaction(None)
 
     assert result.status_code == 302
+    assert result.url == f"{url_post_payment}{token}"
     assert payment.status == ps.PREPARED
     assert payment.token == token
 
