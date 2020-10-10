@@ -7,7 +7,7 @@ from django.db.transaction import atomic
 from django.http import HttpResponse
 from django.urls import reverse
 from django_fsm import can_proceed
-from getpaid.exceptions import LockFailure
+from getpaid.exceptions import LockFailure, ChargeFailure
 from getpaid.processor import BaseProcessor
 from getpaid.types import BackendMethod as bm
 
@@ -49,7 +49,6 @@ class PaymentProcessor(BaseProcessor):
         :param request: request creating the payment
         :return: dict that unpacked will be accepted by :meth:`Client.new_order`
         """
-        loc = "127.0.0.1"
         our_baseurl = self.get_our_baseurl(request)
         url_return = urljoin(
             our_baseurl, reverse("getpaid:callback", kwargs={"pk": self.payment.pk})
@@ -101,6 +100,52 @@ class PaymentProcessor(BaseProcessor):
         results["url"] = self.client.get_transaction_url(self.payment.token)
         return results
 
+    def get_verification_context(self, request=None, **kwargs):
+        """
+        :param request: request creating the payment
+        :return: dict that unpacked will be accepted by :meth:`Client.verify_transaction`
+        """
+        context = {
+            "session_id": self.payment.get_unique_id(),
+            "amount": self.payment.amount_required,
+            "currency": self.payment.currency,
+            "order_id": self.payment.external_id
+        }
+
+        return context
+
+    @atomic()
+    def verify_transaction(self, request=None, view=None, **kwargs) -> HttpResponse:
+        method = self.get_paywall_method().upper()
+        if method == bm.REST:
+            try:
+                params = self.get_verification_context(request=request, **kwargs)
+                self.client.verify_transaction(**params)
+                if can_proceed(self.payment.mark_as_paid):
+                    self.payment.mark_as_paid()
+                    response = http.HttpResponseRedirect(
+                        reverse("getpaid:payment-success", kwargs={"pk": self.payment.pk})
+                    )
+                else:
+                    logger.debug(
+                        "Cannot confirm payment",
+                        extra={
+                            "payment_id": self.payment.id,
+                            "payment_status": self.payment.status,
+                        },
+                    )
+                    response = http.HttpResponseRedirect(
+                        reverse("getpaid:payment-failure", kwargs={"pk": self.payment.pk})
+                    )
+            except ChargeFailure as exc:
+                logger.error(exc, extra=getattr(exc, "context", None))
+                self.payment.fail()
+                response = http.HttpResponseRedirect(
+                    reverse("getpaid:payment-failure", kwargs={"pk": self.payment.pk})
+                )
+            self.payment.save()
+            return response
+
     def handle_paywall_callback(self, request, **kwargs):
         body = request.body.decode()
         data = json.loads(body)
@@ -112,8 +157,6 @@ class PaymentProcessor(BaseProcessor):
             self.payment.external_id = data.get("orderId")
             if can_proceed(self.payment.confirm_payment):
                 self.payment.confirm_payment()
-                if can_proceed(self.payment.mark_as_paid):
-                    self.payment.mark_as_paid()
             else:
                 logger.debug(
                     "Cannot confirm payment",

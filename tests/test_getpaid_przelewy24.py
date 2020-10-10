@@ -28,9 +28,8 @@ def _prep_conf(api_method: bm = bm.REST, confirm_method: cm = cm.PUSH) -> dict:
     }
 
 
-@pytest.mark.parametrize("response_status", [200, 201, 302])
 def test_rest_flow_begin(
-    response_status, payment_factory, settings, requests_mock, getpaid_client
+    payment_factory, settings, requests_mock, getpaid_client
 ):
     token = f"{uuid.uuid4()}"
     requests_mock.post(
@@ -47,7 +46,7 @@ def test_rest_flow_begin(
     settings.GETPAID_BACKEND_SETTINGS = _prep_conf(api_method=bm.REST)
     settings.DEBUG = True
 
-    payment = payment_factory(external_id=uuid.uuid4())
+    payment = payment_factory()
     # requests_mock.post(str(url_api_register), json={"url": str(url_post_payment)})
     result = payment.prepare_transaction(None)
 
@@ -56,6 +55,32 @@ def test_rest_flow_begin(
     assert payment.status == ps.PREPARED
     assert payment.token == token
 
+
+def test_verify_transaction(
+    payment_factory, settings, requests_mock, getpaid_client
+):
+    token = f"{uuid.uuid4()}"
+    requests_mock.put(
+        "/api/v1/transaction/verify",
+        json={
+            "data": {
+                "status": "success"
+            },
+            "responseCode": "0"
+        },
+        status_code=200,
+    )
+
+    settings.GETPAID_BACKEND_SETTINGS = _prep_conf(api_method=bm.REST)
+    settings.DEBUG = True
+
+    payment = payment_factory()
+    payment.confirm_prepared()
+    payment.confirm_payment()
+    result = payment.verify_transaction(None)
+
+    assert result.status_code == 302
+    assert payment.status == ps.PAID
 
 # PUSH flow
 def test_push_flow(
@@ -102,4 +127,5 @@ def test_push_flow(
         data=encoded,
     )
     payment.handle_paywall_callback(request)
-    assert payment.status == ps.PAID
+    assert payment.status == ps.PARTIAL
+    assert payment.external_id == 12345678

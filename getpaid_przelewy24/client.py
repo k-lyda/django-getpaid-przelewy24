@@ -191,7 +191,7 @@ class Client:
         encoded = json.dumps(data, cls=DjangoJSONEncoder)
         self.last_response = requests.put(url, data=encoded, headers=headers)
         if self.last_response.status_code == 200:
-            return self._normalize_convertibles(self.last_response.json())
+            return self.last_response.json()
         raise ChargeFailure(
             "Error verifying transaction",
             context={"raw_response": self.last_response},
