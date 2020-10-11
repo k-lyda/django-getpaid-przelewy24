@@ -78,7 +78,6 @@ def test_verify_transaction(
     payment.confirm_payment()
     result = payment.verify_transaction(None)
 
-    assert result.status_code == 302
     assert payment.status == ps.PAID
 
 # PUSH flow
@@ -90,8 +89,8 @@ def test_push_flow(
     getpaid_client,
 ):
     settings.GETPAID_BACKEND_SETTINGS = _prep_conf(confirm_method=cm.PUSH)
-
-    payment = payment_factory(external_id=uuid.uuid4())
+    external_order_id = 12345678
+    payment = payment_factory(external_id=external_order_id)
     payment.confirm_prepared()
 
     encoded = json.dumps(
@@ -112,7 +111,7 @@ def test_push_flow(
                 "amount": getpaid_client._centify(payment.amount_required),
                 "originAmount": getpaid_client._centify(payment.amount_required),
                 "currency": "PLN",
-                "orderId": 12345678,
+                "orderId": payment.external_id,
                 "methodId": payment.channel,
                 "statement": "string",
             })
@@ -127,4 +126,4 @@ def test_push_flow(
     )
     payment.handle_paywall_callback(request)
     assert payment.status == ps.PARTIAL
-    assert payment.external_id == 12345678
+    assert payment.external_id == external_order_id
