@@ -9,13 +9,13 @@ SECRET_KEY = "=================================================="
 DEBUG = True
 
 GETPAID_ORDER_MODEL = "orders.Order"
-GETPAID_PAYMENT_MODEL = "paywall.Payment"
+GETPAID_PAYMENT_MODEL = "getpaid_przelewy24.Payment"
 
 GETPAID_BACKEND_SETTINGS = {
     "getpaid_przelewy24": {
         "pos_id": 123252,
-        "secret_id": "09f49762ac3463f3698a6b463a1ac2a7",
-        "crc": "3f76241ef53498a1test",
+        "secret_id": "09f4976bac3f63f3698a6b463a0ac2a7",
+        "crc": "3c76241ef55498ae",
         "confirmation_method": "PULL",  # required for local testing
     },
 }

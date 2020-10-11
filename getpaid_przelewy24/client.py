@@ -1,6 +1,7 @@
 import json
 from copy import deepcopy
 from decimal import Decimal
+from enum import Enum
 from hashlib import sha384
 from typing import Optional, Union
 from urllib.parse import urljoin
@@ -95,7 +96,10 @@ class Client:
         return data
 
     def get_sign(self, params):
+        def resolve_enums(e):
+            return e.value if isinstance(e, Enum) else e
         params["crc"] = self.crc
+        params = {k: resolve_enums(v) for k, v in params.items()}
         return sha384(json.dumps(params, separators=(',', ':')).encode('utf-8')).hexdigest()
 
     def get_transaction_url(self, token):
@@ -151,7 +155,7 @@ class Client:
                 "sessionId": session_id,
                 "merchantId": self.pos_id,
                 "amount": self._centify(amount),
-                "currency": currency.value,
+                "currency": currency,
             }),
         })
         if url_status:
@@ -177,13 +181,13 @@ class Client:
           "posId": self.pos_id,
           "sessionId": session_id,
           "amount": amount,
-          "currency": currency.value,
+          "currency": currency,
           "orderId": order_id,
           "sign": self.get_sign({
                 "sessionId": session_id,
                 "orderId": order_id,
                 "amount": self._centify(amount),
-                "currency": currency.value,
+                "currency": currency,
             }),
         })
         headers = self._headers(**kwargs)

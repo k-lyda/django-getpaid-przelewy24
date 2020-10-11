@@ -123,9 +123,7 @@ class PaymentProcessor(BaseProcessor):
                 self.client.verify_transaction(**params)
                 if can_proceed(self.payment.mark_as_paid):
                     self.payment.mark_as_paid()
-                    response = http.HttpResponseRedirect(
-                        reverse("getpaid:payment-success", kwargs={"pk": self.payment.pk})
-                    )
+                    response = reverse("getpaid:payment-success", kwargs={"pk": self.payment.pk})
                 else:
                     logger.debug(
                         "Cannot confirm payment",
@@ -134,15 +132,11 @@ class PaymentProcessor(BaseProcessor):
                             "payment_status": self.payment.status,
                         },
                     )
-                    response = http.HttpResponseRedirect(
-                        reverse("getpaid:payment-failure", kwargs={"pk": self.payment.pk})
-                    )
+                    response = reverse("getpaid:payment-failure", kwargs={"pk": self.payment.pk})
             except ChargeFailure as exc:
                 logger.error(exc, extra=getattr(exc, "context", None))
                 self.payment.fail()
-                response = http.HttpResponseRedirect(
-                    reverse("getpaid:payment-failure", kwargs={"pk": self.payment.pk})
-                )
+                response = reverse("getpaid:payment-failure", kwargs={"pk": self.payment.pk})
             self.payment.save()
             return response
 

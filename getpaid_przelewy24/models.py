@@ -9,8 +9,11 @@ from getpaid.models import AbstractPayment
 
 
 class Payment(AbstractPayment):
+    external_id = models.IntegerField(
+        _("external id"), blank=True, null=True, db_index=True
+    )
     time_limit = models.IntegerField(_("time limit"), default=0)
-    channel = models.IntegerField(_("payment channel"))
+    channel = models.IntegerField(_("payment channel"), default=16)
     token = models.CharField(_("token"), max_length=50, null=True)
 
     def verify_transaction(
